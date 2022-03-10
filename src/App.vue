@@ -30,7 +30,7 @@ export default {
     };
   },
   mounted() {
-    this.$bus.$on("click", this.add);
+    this.$bus.$on("fileRead", this.add);
   },
 };
 </script>

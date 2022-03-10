@@ -11,33 +11,19 @@
   </n-upload>
 </template>
 
-<script>
+<script setup>
 import { NUpload, NButton } from "naive-ui";
 import { getCurrentInstance, ref } from "vue";
 
-export default {
-  components: {
-    NUpload,
-    NButton,
-  },
-  setup() {
-    const ctx = getCurrentInstance().appContext.config.globalProperties;
-    let uploader = ref(null);
-    let max = 1;
-    let multiple = true;
+let uploader = ref(null);
+let max = 1;
+let multiple = true;
 
-    const beforeUpload = ({ file }) => {
-      ctx.$bus.$emit("click", file.file);
-      return false;
-    };
+const ctx = getCurrentInstance().appContext.config.globalProperties;
 
-    return {
-      uploader,
-      max,
-      multiple,
-      beforeUpload,
-    };
-  },
+const beforeUpload = ({ file }) => {
+  ctx.$bus.$emit("fileRead", file.file);
+  return false;
 };
 </script>
 

@@ -60,7 +60,7 @@ export default {
       mainLayer.addTo(map);
 
       const ctx = getCurrentInstance().appContext.config.globalProperties;
-      ctx.$bus.$on("click", addCircle);
+      ctx.$bus.$on("fileRead", addCircle);
     });
 
     return {
