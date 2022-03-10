@@ -14,15 +14,15 @@ export default {
 
     const addMap = () => {
       map = L.map("map", {
-        center: [51.508, -0.11],
+        center: [39.990, 116.303],
         layers: [],
-        zoom: 14,
+        zoom: 15,
       });
     };
 
     const addScale = (map) => {
       let scale = L.control.scale({
-        maxWidth: 200,
+        maxWidth: 100,
         metric: true,
         imperial: false,
       });
@@ -33,6 +33,7 @@ export default {
       const image = L.tileLayer(
         "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
+          minZoom: 7,
           maxZoom: 18,
         }
       );
@@ -40,11 +41,11 @@ export default {
     };
 
     const addCircle = (file) => {
-      let circle = L.circle([51.508, -0.11], {
+      let circle = L.circle([39.985699, 116.303039], {
         color: "red",
         fillColor: "#f03",
         fillOpacity: 0.5,
-        radius: 500,
+        radius: 50,
       });
       circle.addTo(mainLayer);
 
