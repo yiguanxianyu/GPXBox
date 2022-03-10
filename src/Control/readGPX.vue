@@ -1,10 +1,11 @@
 <template>
   <n-upload
     id="uploader"
+    ref="uploader"
     accept=".gpx"
     :multiple="multiple"
     :max="max"
-    @before-upload="handlechange"
+    @before-upload="beforeUpload"
   >
     <n-button>上传文件</n-button>
   </n-upload>
@@ -12,7 +13,7 @@
 
 <script>
 import { NUpload, NButton } from "naive-ui";
-import { getCurrentInstance } from "vue";
+import { getCurrentInstance, ref } from "vue";
 
 export default {
   components: {
@@ -20,19 +21,21 @@ export default {
     NButton,
   },
   setup() {
-    const ctx = getCurrentInstance().appContext.config.globalProperties;   
-    
+    const ctx = getCurrentInstance().appContext.config.globalProperties;
+    let uploader = ref(null);
     let max = 1;
     let multiple = true;
 
-    let handlechange = ({ file }) => {
+    const beforeUpload = ({ file }) => {
       ctx.$bus.$emit("click", file.file);
+      return false;
     };
 
     return {
+      uploader,
       max,
       multiple,
-      handlechange,
+      beforeUpload,
     };
   },
 };
