@@ -11,7 +11,7 @@
 <script>
 import Map from "@/components/Map/MapBox";
 import Panel from "@/components/Control/controlPanel";
-import { ref } from "vue";
+//import { ref } from "vue";
 import { NMessageProvider } from "naive-ui";
 
 export default {
@@ -20,21 +20,6 @@ export default {
     Map,
     Panel,
     NMessageProvider,
-  },
-  setup() {
-    let counter = ref(1);
-
-    const add = () => {
-      counter.value++;
-    };
-
-    return {
-      counter,
-      add,
-    };
-  },
-  mounted() {
-    this.$bus.$on("fileRead", this.add);
   },
 };
 </script>
