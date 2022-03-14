@@ -1,13 +1,11 @@
 <template>
   <n-upload
-    id="uploader"
     ref="uploader"
     accept=".gpx"
-    :multiple="multiple"
     :max="max"
     @before-upload="beforeUpload"
   >
-    <n-button>上传文件</n-button>
+    <n-button type="primary">上传文件</n-button>
   </n-upload>
 </template>
 
@@ -17,7 +15,6 @@ import { getCurrentInstance, ref } from "vue";
 
 let uploader = ref(null);
 let max = 1;
-let multiple = true;
 
 const ctx = getCurrentInstance().appContext.config.globalProperties;
 

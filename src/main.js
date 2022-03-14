@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import App from './App'
-import bus from './bus'
+import bus from './components/bus'
 
 const app = createApp(App);
 
