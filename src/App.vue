@@ -1,27 +1,18 @@
 <template>
   <n-message-provider>
     <div id="container">
-      <!-- <div>{{ counter }}</div> -->
       <Map id="map"></Map>
-      <Panel id="panel"></Panel>
+      <Panel id="panel" ref="panel"></Panel>
     </div>
   </n-message-provider>
 </template>
 
-<script>
+<script setup>
 import Map from "@/components/Map/MapBox";
 import Panel from "@/components/Control/controlPanel";
 //import { ref } from "vue";
 import { NMessageProvider } from "naive-ui";
 
-export default {
-  name: "App",
-  components: {
-    Map,
-    Panel,
-    NMessageProvider,
-  },
-};
 </script>
 
 <style>
@@ -43,7 +34,7 @@ body {
 }
 
 #panel {
-  width: 400px;
+  width: 600px;
   text-align: center;
   background-color: aliceblue;
 }

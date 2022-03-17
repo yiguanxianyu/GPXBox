@@ -5,7 +5,7 @@
     :max="max"
     @before-upload="beforeUpload"
   >
-    <n-button type="primary">上传文件</n-button>
+    <n-button type="primary" size="large">上传文件</n-button>
   </n-upload>
 </template>
 
