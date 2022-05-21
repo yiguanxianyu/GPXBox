@@ -10,7 +10,7 @@ function GpxProcess(fileText) {
     let points = data.points;
 
     let timeArr = points.map((item) => {
-        return item.time;
+        return +item.time;
     });
 
     let dataLength = dist.length;
@@ -23,7 +23,7 @@ function GpxProcess(fileText) {
     }
 
     speedArr[0] = 1000 * dist[0] / (points[1].time - points[0].time);
-    speedArr[dataLength - 1] = 1000 * (dist[dataLength - 1] - dist[dataLength - 2]) / (points[dataLength - 1].time - points[dataLength - 2].time);
+    speedArr[dataLength - 1] = 1000 * (dist[dataLength - 1] - dist[dataLength - 3]) / (points[dataLength - 1].time - points[dataLength - 3].time);
 
     this.timeArr = timeArr;
     this.speedArr = speedArr;
@@ -37,7 +37,7 @@ GpxProcess.prototype.getData = function () {
 
     let chartDataArr = new Array(dataLength)
     for (let i = 0; i < dataLength; i++) {
-        chartDataArr[i] = {value: [+timeArr[i], speedArr[i]]};
+        chartDataArr[i] = {value: [timeArr[i], speedArr[i]]};
     }
     return chartDataArr
 }
@@ -49,7 +49,7 @@ GpxProcess.prototype.getDataAsKmPreHour = function () {
 
     let chartDataArr = new Array(dataLength)
     for (let i = 0; i < dataLength; i++) {
-        chartDataArr[i] = {value: [+timeArr[i], 3.6 * speedArr[i]]};
+        chartDataArr[i] = {value: [timeArr[i], 3.6 * speedArr[i]]};
     }
 
     return chartDataArr
@@ -84,7 +84,7 @@ GpxProcess.prototype.getDataAsMinutePerKm = function () {
 
         if (currPace > avgPace * 3) currPace = 0;
 
-        chartDataArr[i] = {value: [+timeArr[i], currPace]};
+        chartDataArr[i] = {value: [timeArr[i], currPace]};
     }
 
     return chartDataArr
@@ -100,6 +100,10 @@ GpxProcess.prototype.toPolyline = function () {
         polyline[i] = [currPoint.lat, currPoint.lon];
     }
     return polyline;
+}
+
+GpxProcess.prototype.getTimeArr = function () {
+    return this.timeArr;
 }
 
 export default GpxProcess;

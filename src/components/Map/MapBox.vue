@@ -5,19 +5,19 @@
 <script setup>
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import "leaflet-gpx";
 import "leaflet.motion/dist/leaflet.motion.min.js";
-import "@/components/Control/L.Polyline.SnakeAnim.js"
+import "leaflet-polylinedecorator"
 import {getCurrentInstance, onMounted} from "vue";
 
 let map;
-let mainLayer;
+let gpxPolyline;
+let speedScale = 1;
 
 const addMap = () => {
   map = L.map("map", {
     center: [39.99, 116.303],
-    layers: [],
     zoom: 15,
+    preferCanvas: true
   });
 };
 
@@ -34,24 +34,7 @@ const addTile = (map) => {
   L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
 };
 
-const addCircle = (file) => {
-  // console.log(file);
-  // let circle = L.circle([39.985699, 116.303039], {
-  //   color: "red",
-  //   fillColor: "#f03",
-  //   fillOpacity: 0.5,
-  //   radius: 50,
-  // });
-  // circle.addTo(mainLayer);
-
-  let gpxUrl = window.URL.createObjectURL(file);
-
-  new L.GPX(gpxUrl, {async: true})
-      .on("loaded", function (e) {
-        map.fitBounds(e.target.getBounds());
-      })
-  //.addTo(map);
-
+const addCircle = () => {
   /*L.motion
     .polyline(
       [
@@ -80,13 +63,56 @@ const addCircle = (file) => {
     .addTo(map);*/
 };
 
-
 const ctx = getCurrentInstance().appContext.config.globalProperties;
-ctx.$bus.$on("fileRead", addCircle);
+ctx.$bus.$on('fileRead', addCircle);
+ctx.$bus.$on('speedScaleChanged', (sc) => {
+  speedScale = sc
+})
 
 ctx.$bus.$on('sendPolyline', (input) => {
-  let pl = L.polyline(input, {snakingSpeed: 200});
-  pl.addTo(map).snakeIn();
+  gpxPolyline.setLatLngs(input.polyLine);
+
+  L.polylineDecorator(input.polyLine, {
+    patterns: [{
+      repeat: 50,
+      symbol: L.Symbol.arrowHead({
+        pixelSize: 4,
+        headAngle: 75,
+        polygon: false,
+        pathOptions: {
+          stroke: true,
+          weight: 1,
+          color: '#d20b0b'
+        }
+      })
+    }]
+  }).addTo(map);
+
+  map.fitBounds(gpxPolyline.getBounds())
+  let setTimeoutID = [];
+  // 实时轨迹线
+  let animP = L.polyline([{lat: input.polyLine[0][0], lon: input.polyLine[0][1]}], {
+    weight: 8,
+    color: '#FF9900'
+  }).addTo(map);
+
+  let dataLength = input.polyLine.length;
+  let i = 0;
+
+
+  let set = () => {
+    if (i < dataLength - 1) {
+      let point = input.polyLine[i];
+      animP.addLatLng({lat: point[0], lon: point[1]});
+
+      let timeDelta = (input.timeArr[i + 1] - input.timeArr[i]) / speedScale;
+      setTimeoutID.push(setTimeout(set, timeDelta));
+      i++;
+    }
+  }
+
+  setTimeoutID.push(setTimeout(set, 0));
+
 });
 
 onMounted(() => {
@@ -94,8 +120,7 @@ onMounted(() => {
   addScale(map);
   addTile(map);
 
-  mainLayer = L.layerGroup();
-  mainLayer.addTo(map);
+  gpxPolyline = L.polyline([], {smoothFactor: 0.5}).addTo(map);
 
 });
 </script>

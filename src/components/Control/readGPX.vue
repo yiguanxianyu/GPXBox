@@ -14,7 +14,7 @@ import { NUpload, NButton } from "naive-ui";
 import { getCurrentInstance, ref } from "vue";
 
 let uploader = ref(null);
-let max = 1;
+const max = ref(1);
 
 const ctx = getCurrentInstance().appContext.config.globalProperties;
 

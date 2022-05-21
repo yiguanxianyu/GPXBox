@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import Map from "@/components/Map/MapBox";
+import Map from "@/components/Map/mapBox";
 import Panel from "@/components/Control/controlPanel";
 import Vc from "@/components/Chart/viewChart";
 //import { ref } from "vue";

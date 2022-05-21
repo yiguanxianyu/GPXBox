@@ -44,7 +44,7 @@ function clickEvent(params) {
 }
 
 //生成测试数据
-let speedRate = 2;
+let speedScale = 1;
 let date = new Date(2022, 5, 16, 5, 30, 30);
 let dataLength = 105;
 let data = Array(dataLength);
@@ -160,27 +160,7 @@ let option = ref(_option);
 const chart = ref(null);
 
 onMounted(() => {
-  chart.value.setOption(_option);
-
-  let p1 = chart.value.convertToPixel('grid', [data[5].value[0], 0]);
-  let p2 = chart.value.convertToPixel('grid', data[5].value);
-
-  option.value.graphic = {
-    type: 'line',
-    draggable: 'horizontal',
-    z: -100,
-    // left: 'center',
-    // top: 'middle',
-    // shape:{
-    //   x1:xx1,
-    //   x2:xx2,
-    //   y1:yy1,
-    //   y2:yy2
-    // }
-    shape: {x1: p1[0], x2: p2[0], y1: p1[1], y2: p2[1]}
-  }
-
-  console.log(p1, p2);
+  // chart.value.setOption(_option);
 })
 
 const ctx = getCurrentInstance().appContext.config.globalProperties;
@@ -190,12 +170,14 @@ let setTimeoutID = [];
 function addChart(file) {
   const fr = new FileReader();
   fr.readAsText(file, 'utf-8')
-  fr.onload = function () {
+  fr.onload = () => {
+
     for (let j = 0, idLength = setTimeoutID.length; j < idLength; j++) {
       clearTimeout(setTimeoutID[j]);
     }
+
     let gp = new GpxProcess(fr.result);
-    ctx.$bus.$emit('sendPolyline', gp.toPolyline());
+    ctx.$bus.$emit('sendPolyline', {polyLine: gp.toPolyline(), timeArr: gp.getTimeArr()});
 
     let chartData = gp.getData();
     option.value.series[0].data = chartData;
@@ -210,7 +192,7 @@ function addChart(file) {
           coord: [chartData[i].value[0], chartData[i].value[1]]
         };
 
-        let timeDelta = (chartData[i + 1].value[0] - chartData[i].value[0]) / speedRate;
+        let timeDelta = (chartData[i + 1].value[0] - chartData[i].value[0]) / speedScale;
         setTimeoutID.push(setTimeout(set, timeDelta));
         i++;
       }
@@ -226,6 +208,10 @@ ctx.$bus.$on("fileRead", addChart)
 ctx.$bus.$on("titleRead", (newOptions) => {
   option.value = newOptions;
 });
+
+ctx.$bus.$on('speedScaleChanged', (sc) => {
+  speedScale = sc
+})
 
 </script>
 
