@@ -7,10 +7,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-gpx";
 import "leaflet.motion/dist/leaflet.motion.min.js";
-import { getCurrentInstance, onMounted } from "vue";
+import "@/components/Control/L.Polyline.SnakeAnim.js"
+import {getCurrentInstance, onMounted} from "vue";
 
-let map = null;
-let mainLayer = null;
+let map;
+let mainLayer;
 
 const addMap = () => {
   map = L.map("map", {
@@ -21,36 +22,35 @@ const addMap = () => {
 };
 
 const addScale = (map) => {
-  let scale = L.control.scale({
+  L.control.scale({
     maxWidth: 100,
     metric: true,
     imperial: false,
-  });
-  scale.addTo(map);
+  }).addTo(map);
 };
 
 const addTile = (map) => {
   let tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-  const image = L.tileLayer(tileUrl, { minZoom: 7, maxZoom: 18 });
-  image.addTo(map);
+  L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
 };
 
 const addCircle = (file) => {
-  console.log(file);
-  let circle = L.circle([39.985699, 116.303039], {
-    color: "red",
-    fillColor: "#f03",
-    fillOpacity: 0.5,
-    radius: 50,
-  });
-  circle.addTo(mainLayer);
+  // console.log(file);
+  // let circle = L.circle([39.985699, 116.303039], {
+  //   color: "red",
+  //   fillColor: "#f03",
+  //   fillOpacity: 0.5,
+  //   radius: 50,
+  // });
+  // circle.addTo(mainLayer);
 
-  let gpxurl = window.URL.createObjectURL(file);
-  new L.GPX(gpxurl, { async: true })
-    .on("loaded", function (e) {
-      map.fitBounds(e.target.getBounds());
-    })
-    .addTo(map);
+  let gpxUrl = window.URL.createObjectURL(file);
+
+  new L.GPX(gpxUrl, {async: true})
+      .on("loaded", function (e) {
+        map.fitBounds(e.target.getBounds());
+      })
+  //.addTo(map);
 
   /*L.motion
     .polyline(
@@ -80,6 +80,15 @@ const addCircle = (file) => {
     .addTo(map);*/
 };
 
+
+const ctx = getCurrentInstance().appContext.config.globalProperties;
+ctx.$bus.$on("fileRead", addCircle);
+
+ctx.$bus.$on('sendPolyline', (input) => {
+  let pl = L.polyline(input, {snakingSpeed: 200});
+  pl.addTo(map).snakeIn();
+});
+
 onMounted(() => {
   addMap();
   addScale(map);
@@ -88,13 +97,11 @@ onMounted(() => {
   mainLayer = L.layerGroup();
   mainLayer.addTo(map);
 
-  const ctx = getCurrentInstance().appContext.config.globalProperties;
-  ctx.$bus.$on("fileRead", addCircle);
 });
 </script>
 
 <style>
-#map-container {
+#map {
   width: 100%;
   height: 100%;
 }
