@@ -1,15 +1,15 @@
 export function mean(numArr) {
     let dataLength = numArr.length;
-    let sum = 0;
-    for (let i = 0; i < dataLength; i++) {
-        sum += numArr[i];
-    }
-    return sum / dataLength;
-}
 
-export function round(number, precision = 0) {
-    let temp = Math.pow(10, precision)
-    return Math.round(number * temp) / temp;
+    if (dataLength === undefined) {
+        return numArr;
+    } else {
+        let sum = 0;
+        for (let i = 0; i < dataLength; i++) {
+            sum += numArr[i];
+        }
+        return sum / dataLength;
+    }
 }
 
 export function timeFormat(inputData) {
@@ -29,4 +29,16 @@ export function timeFormat(inputData) {
     seconds = seconds > 9 ? seconds : "0" + seconds;
 
     return `${year}-${month}-${date} ${hour}:${minutes}:${seconds}`;
+}
+
+
+export function formatSecond(time) {
+    time = time / 1000;
+    const h = parseInt(time / 3600);
+    const minute = parseInt(time / 60 % 60);
+    const second = Math.ceil(time % 60);
+
+    const hours = h < 10 ? '0' + h : h;
+    const formatSecond = second > 59 ? 59 : second;
+    return `${hours > 0 ? `${hours}:` : ''}${minute < 10 ? '0' + minute : minute}:${formatSecond < 10 ? '0' + formatSecond : formatSecond}`;
 }
