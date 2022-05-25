@@ -5,8 +5,8 @@
 <script setup>
 
 import VChart, {THEME_KEY} from "vue-echarts";
-import {getCurrentInstance, onMounted, provide, ref} from "vue";
-import * as echarts from 'echarts/core';
+import {getCurrentInstance, provide, ref} from "vue";
+import {use} from 'echarts/core';
 import {
   DataZoomComponent,
   GridComponent,
@@ -20,11 +20,11 @@ import {LineChart} from 'echarts/charts';
 import {UniversalTransition} from 'echarts/features';
 import {CanvasRenderer} from 'echarts/renderers';
 import GpxProcess from "@/components/Control/gpxProcess";
-import { timeFormat} from "@/components/utils";
+import {timeFormat} from "@/components/utils";
 
 provide(THEME_KEY, "light")
 
-echarts.use([
+use([
   GridComponent,
   MarkPointComponent,
   MarkLineComponent,
@@ -44,15 +44,36 @@ let chartData;
 let timeDelta;
 let dataLength;
 
-let _option = {
+let speedFormatter = [{
+  markLineY: '{c} m/s', tooltip: (params) => {
+    return `${params[0].data.value[1].toFixed(2)}m/s`;
+  }
+}, {
+  markLineY: '{c} km/h',
+  tooltip: params => {
+    return `${params[0].data.value[1].toFixed(2)}km/h`;
+  }
+}, {
+  markLineY: (params) => {
+    let min = Math.trunc(params.data.value);
+    let sec = Math.trunc((params.data.value - min) * 60);
+    if (sec < 10) sec = '0' + sec;
+    return min + ':' + sec;
+  },
+  tooltip: (params) => {
+    let value = params[0].data.value[1];
+    let min = Math.trunc(value);
+    let sec = Math.trunc((value - min) * 60);
+    if (sec < 10) sec = '0' + sec;
+    return min + ':' + sec + '/km';
+  }
+}];
+
+const option = ref({
   title: {text: 'GPXbox', left: 'center'},
   tooltip: {
     trigger: 'axis',
-    formatter: (params) => {
-      params = params[0].data;
-      let dateStr = timeFormat(params.value[0]);
-      return `<p>${dateStr}<br/>${params.value[1].toFixed(2)}</p>`;
-    },
+    formatter: speedFormatter[0].tooltip,
     axisPointer: {
       type: 'cross',
       animation: true,
@@ -119,7 +140,7 @@ let _option = {
               backgroundColor: "rgba(143,243,192,0.75)",
               borderRadius: [4, 4, 4, 4],
               padding: [5, 5, 5, 5],
-              formatter: '{c} m/s'
+              formatter: speedFormatter[0].markLineY
             }
           }
         ]
@@ -137,25 +158,28 @@ let _option = {
       }
     }
   ],
-}
-let option = ref(_option);
+});
 const chart = ref();
-
-onMounted(() => {
-  // chart.value.setOption(_option);
-})
-
 const ctx = getCurrentInstance().appContext.config.globalProperties;
 
 let setTimeoutID = [];
 
-function addChart(file) {
+function clearID() {
+  const idLength = setTimeoutID.length;
+  for (let i = 0; i < idLength; i++) {
+    clearTimeout(setTimeoutID[i]);
+  }
+  setTimeoutID = [];
+}
+
+ctx.$bus.$on("fileRead", file => {
+  option.value.title.text = file.name;
   const fr = new FileReader();
+  // 读取GPX文件
   fr.readAsText(file, 'utf-8');
 
   fr.onload = () => {
-    for (let j = 0, idLength = setTimeoutID.length; j < idLength; j++)
-      clearTimeout(setTimeoutID[j]);
+    clearID();
 
     gpx = new GpxProcess(fr.result);
 
@@ -172,15 +196,8 @@ function addChart(file) {
     timeDelta[dataLength - 1] = 0;
 
     ctx.$bus.$emit('sendPolyline', {polyline: gpx.toPolyline(), timeDelta: timeDelta});
-    ctx.$bus.$emit('statsData',gpx.getStats());
+    ctx.$bus.$emit('statsData', gpx.getStats());
   }
-
-}
-
-ctx.$bus.$on("fileRead", addChart);
-
-ctx.$bus.$on("fileTitleRead", (title) => {
-  option.value.title.text = title;
 });
 
 ctx.$bus.$on('speedRatioChanged', (sc) => {
@@ -188,23 +205,35 @@ ctx.$bus.$on('speedRatioChanged', (sc) => {
 });
 
 ctx.$bus.$on('play', () => {
+  clearID();
   let set = () => {
-    if (index < dataLength - 1) {
+    if (index++ < dataLength) {
       option.value.series[0].markLine.data[0].xAxis = chartData[index].value[0];
       option.value.series[0].markLine.data[1].yAxis = chartData[index].value[1];
       option.value.series[0].markPoint.data[0] = {coord: chartData[index].value};
-      // console.log('wait for ' + timeDelta[index] / speedRatio);
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-      index++;
-    }
+      ctx.$bus.$emit('indexChanged', index);
+    } else clearID();
   }
-  setTimeoutID.push(setTimeout(set, 0));
+  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
+});
+
+ctx.$bus.$on('playReversed', () => {
+  clearID();
+  let set = () => {
+    if (index--) {
+      option.value.series[0].markLine.data[0].xAxis = chartData[index].value[0];
+      option.value.series[0].markLine.data[1].yAxis = chartData[index].value[1];
+      option.value.series[0].markPoint.data[0] = {coord: chartData[index].value};
+      setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
+      ctx.$bus.$emit('indexChanged', index);
+    } else clearID();
+  }
+  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
 });
 
 ctx.$bus.$on('pause', () => {
-  for (let i = 0, idLength = setTimeoutID.length; i < idLength; i++) {
-    clearTimeout(setTimeoutID[i]);
-  }
+  clearID();
 });
 
 ctx.$bus.$on('backToStart', () => {
@@ -217,26 +246,29 @@ ctx.$bus.$on('backToStart', () => {
 ctx.$bus.$on('unitOfSpeedChanged', key => {
   if (key === 0) {
     chartData = gpx.getData();
-    option.value.series[0].markLine.data[1].label.formatter = '{c} m/s';
-
   } else if (key === 1) {
     chartData = gpx.getDataAsKmPreHour();
-    option.value.series[0].markLine.data[1].label.formatter = '{c} km/h';
-
   } else if (key === 2) {
     chartData = gpx.getDataAsMinutePerKm();
-    option.value.series[0].markLine.data[1].label.formatter = (params) => {
-      let min = Math.trunc(params.data.value);
-      let sec = Math.trunc((params.data.value - min) * 60);
-      if (sec < 10) sec = '0' + sec;
-      return min + ':' + sec;
-    }
   } else {
     console.log(key);
   }
-
+  option.value.series[0].markLine.data[1].label.formatter = speedFormatter[key].markLineY;
+  option.value.tooltip.formatter = speedFormatter[key].tooltip;
   option.value.series[0].data = chartData;
+  option.value.series[0].markLine.data[0].xAxis = chartData[index].value[0];
+  option.value.series[0].markLine.data[1].yAxis = chartData[index].value[1];
+  option.value.series[0].markPoint.data[0] = {coord: chartData[index].value};
 });
+
+ctx.$bus.$on('sliderValueChanged', value => {
+  clearID();
+  index = (value * dataLength).toFixed();
+  option.value.series[0].markLine.data[0].xAxis = chartData[index].value[0];
+  option.value.series[0].markLine.data[1].yAxis = chartData[index].value[1];
+  option.value.series[0].markPoint.data[0] = {coord: chartData[index].value};
+});
+
 </script>
 
 <style scoped>

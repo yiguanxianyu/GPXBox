@@ -1,5 +1,7 @@
 <template>
-  <div id="map"></div>
+  <div>
+    <div id="map"></div>
+  </div>
 </template>
 
 <script setup>
@@ -18,6 +20,14 @@ let animP;
 let dataLength;
 let inputPolyline;
 let timeDelta;
+
+function clearID() {
+  const idLength = setTimeoutID.length;
+  for (let i = 0; i < idLength; i++) {
+    clearTimeout(setTimeoutID[i]);
+  }
+  setTimeoutID = [];
+}
 
 const addMap = () => {
   map = L.map("map", {
@@ -40,42 +50,17 @@ const addTile = (map) => {
   L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
 };
 
-const addCircle = () => {
-  /*L.motion
-    .polyline(
-      [
-        [39.990, 116.3030],
-        [39.991, 116.3036],
-        [39.993, 116.3039],
-        [39.996, 116.3033],
-        [39.992, 116.3010],
-      ],
-      {
-        color: "red",
-      },
-      {
-        auto: true,
-        duration: 5000,
-        easing: L.Motion.Ease.easeInOutQuart,
-      },
-      {
-        removeOnEnd: false,
-        icon: L.icon({
-          iconUrl: "../assets/logo.png",
-          iconSize: [25.1, 25],
-        }),
-      }
-    )
-    .addTo(map);*/
-};
-
 const ctx = getCurrentInstance().appContext.config.globalProperties;
-ctx.$bus.$on('fileRead', addCircle);
+
 ctx.$bus.$on('speedRatioChanged', (sc) => {
   speedRatio = sc;
 })
 
 ctx.$bus.$on('sendPolyline', (input) => {
+  index = 0;
+  dataLength = input.polyline.length;
+  timeDelta = input.timeDelta;
+
   gpxPolyline.setLatLngs(input.polyline);
   gpxLineDecorator.setPaths(input.polyline);
   map.fitBounds(gpxPolyline.getBounds())
@@ -84,7 +69,6 @@ ctx.$bus.$on('sendPolyline', (input) => {
   if (animP === undefined) {
     //第一次读入
     animP = L.polyline([{lat: input.polyline[0][0], lon: input.polyline[0][1]}], {
-      smoothFactor: 0.5,
       weight: 4,
       color: '#ff6500'
     }).addTo(map);
@@ -92,10 +76,6 @@ ctx.$bus.$on('sendPolyline', (input) => {
     //重新读入
     animP.setLatLngs([{lat: input.polyline[0][0], lon: input.polyline[0][1]}])
   }
-
-  index = 0;
-  dataLength = input.polyline.length;
-  timeDelta = input.timeDelta;
 
   let inputPl = new Array(dataLength);
   for (let i = 0; i < dataLength; i++) {
@@ -106,20 +86,30 @@ ctx.$bus.$on('sendPolyline', (input) => {
 });
 
 ctx.$bus.$on('play', () => {
+  clearID();
   let set = () => {
-    if (index < dataLength - 1) {
+    if (index++ < dataLength) {
       animP.addLatLng(inputPolyline[index]);
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-      index++;
-    }
+    } else clearID();
   }
-  setTimeoutID.push(setTimeout(set, 0));
+  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
+});
+
+ctx.$bus.$on('playReversed', () => {
+  clearID();
+  let set = () => {
+    if (index--) {
+      animP.setLatLngs(inputPolyline.slice(0, index));
+      setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
+    } else clearID();
+  }
+  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
+
 });
 
 ctx.$bus.$on('pause', () => {
-  for (let j = 0, idLength = setTimeoutID.length; j < idLength; j++) {
-    clearTimeout(setTimeoutID[j]);
-  }
+  clearID();
 });
 
 ctx.$bus.$on('backToStart', () => {
@@ -128,13 +118,18 @@ ctx.$bus.$on('backToStart', () => {
   animP.setLatLngs([startPoint]);
 })
 
+ctx.$bus.$on('sliderValueChanged', value => {
+  clearID();
+  index = (value * dataLength).toFixed();
+  animP.setLatLngs(inputPolyline.slice(0, index))
+});
+
 onMounted(() => {
   addMap();
   addScale(map);
   addTile(map);
 
-  gpxPolyline = L.polyline([],
-      {smoothFactor: 0.5, weight: 4, color: '#00ad53'}).addTo(map);
+  gpxPolyline = L.polyline([], {weight: 4, color: '#00ad53'}).addTo(map);
 
   gpxLineDecorator = L.polylineDecorator([], {
     patterns: [{
@@ -146,7 +141,7 @@ onMounted(() => {
         pathOptions: {
           stroke: true,
           weight: 2,
-          color: '#f5f5dc'
+          color: '#0f2fe0'
         }
       })
     }]

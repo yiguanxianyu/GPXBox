@@ -1,17 +1,3 @@
-export function mean(numArr) {
-    let dataLength = numArr.length;
-
-    if (dataLength === undefined) {
-        return numArr;
-    } else {
-        let sum = 0;
-        for (let i = 0; i < dataLength; i++) {
-            sum += numArr[i];
-        }
-        return sum / dataLength;
-    }
-}
-
 export function timeFormat(inputData) {
     const dt = new Date(inputData);
 
@@ -41,4 +27,16 @@ export function formatSecond(time) {
     const hours = h < 10 ? '0' + h : h;
     const formatSecond = second > 59 ? 59 : second;
     return `${hours > 0 ? `${hours}:` : ''}${minute < 10 ? '0' + minute : minute}:${formatSecond < 10 ? '0' + formatSecond : formatSecond}`;
+}
+
+
+export function formatDistance(dist) {
+    let output;
+
+    if (dist >= 10000)
+        output = (dist * 0.001).toFixed(2) + 'km';
+    else
+        output = dist.toFixed(1) + 'm';
+
+    return output;
 }
