@@ -15,12 +15,12 @@
           </n-upload>
         </div>
 
-        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('play')">
+        <n-button :disabled="fileNotRead" secondary strong @click="clickPlayButton">
           <n-icon :component="Play"/>
           &nbsp;播放
         </n-button>
 
-        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('pause')">
+        <n-button :disabled="fileNotRead" secondary strong @click="clickPauseButton">
           <n-icon :component="Pause"/>
           &nbsp;暂停
         </n-button>
@@ -28,7 +28,7 @@
       </div>
 
       <div class="row">
-        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('playReversed')">
+        <n-button :disabled="fileNotRead" secondary strong @click="clickPlayReversedButton">
           <n-icon :component="PlayBack"/>
           &nbsp;倒放
         </n-button>
@@ -155,7 +155,6 @@ const numPoints = ref();// 点的总数量
 const checkMark = renderIcon(Checkmark);
 const message = useMessage();
 const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
-const _ctx = ref(eventBus);
 
 //速度单位
 let unitOfSpeedIndex = 0;
@@ -227,6 +226,18 @@ function handleSpeedRatioChanged(key) {
     speedRatio.value = key;
     message.success('调整为' + key + '倍速');
   }
+}
+
+function clickPlayButton() {
+  eventBus.$emit('play');
+}
+
+function clickPauseButton() {
+  eventBus.$emit('pause');
+}
+
+function clickPlayReversedButton() {
+  eventBus.$emit('playReversed');
 }
 
 function clickBackToStartButton() {
