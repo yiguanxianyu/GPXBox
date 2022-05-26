@@ -9,7 +9,7 @@
       <div class="row">
         <div>
           <n-upload :max="1" accept=".gpx" @before-upload="beforeUpload">
-            <n-button color="#149D1F" secondary strong>打开 GPX</n-button>
+            <n-button color="#149D1F" secondary strong><n-icon :component="FolderOpen"/>&nbsp;打开 GPX</n-button>
           </n-upload>
         </div>
 
@@ -109,7 +109,7 @@ import {
   ReturnUpBack,
   Speedometer,
   SpeedometerSharp,
-  StatsChart,
+  StatsChart,FolderOpen,
   Timer
 } from "@vicons/ionicons5";
 import {
@@ -231,6 +231,9 @@ function clickPauseButton() {
 
 function clickBackToStartButton() {
   ctx.$bus.$emit('backToStart');
+  movedDist.value = formatDistance(0);
+  movedTime.value = formatSecond(0);
+  sliderValue.value = 0;
 }
 
 function clickPlayReversedButton() {
