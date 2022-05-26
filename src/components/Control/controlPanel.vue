@@ -193,17 +193,18 @@ ctx.$bus.$on('indexChanged', index => {
 });
 
 ctx.$bus.$on("fileRead", () => {
-  fileHasRead.value = true
+  fileHasRead.value = true;
 });
 
 function handleSpeedUnitChanged(key) {
   if (fileHasRead.value) {
+    ctx.$bus.$emit('unitOfSpeedChanged', key);
+    meanSpeed.value = _meanSpeed[key];
+
     for (let i = 0; i < 3; i++) {
       speedUnitOptions.value[i].icon = null;
     }
     speedUnitOptions.value[key].icon = checkMark;
-    ctx.$bus.$emit('unitOfSpeedChanged', key);
-    meanSpeed.value = _meanSpeed[key];
   } else {
     message.warning('请先读取文件');
   }

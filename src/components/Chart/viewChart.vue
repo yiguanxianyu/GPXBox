@@ -20,7 +20,6 @@ import {LineChart} from 'echarts/charts';
 import {UniversalTransition} from 'echarts/features';
 import {CanvasRenderer} from 'echarts/renderers';
 import GpxProcess from "@/components/Control/gpxProcess";
-import {timeFormat} from "@/components/utils";
 
 provide(THEME_KEY, "light")
 
@@ -127,7 +126,7 @@ const option = ref({
               borderRadius: [4, 4, 4, 4],
               padding: [5, 5, 5, 5],
               formatter: (input) => {
-                return timeFormat(input.data.coord[0]);
+                return new Date(input.data.coord[0]).toLocaleString();
               }
             },
             xAxis: 0
