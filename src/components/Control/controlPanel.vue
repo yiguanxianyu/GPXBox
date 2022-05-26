@@ -48,7 +48,7 @@
 
       <n-tooltip trigger="hover">
         <template #trigger>
-          <n-input-number id="inputNumber" :default-value="1" :max="5" :min="0.1" :value="speedRatio"
+          <n-input-number id="inputNumber" :default-value="1" :max="8" :min="0.1" :value="speedRatio"
                           @update:value="handleSpeedRatioChanged">
             <template #prefix>
               <n-icon :component="Speedometer" :depth="1"/>
@@ -58,7 +58,7 @@
             </template>
           </n-input-number>
         </template>
-        允许设置的倍速范围为 0.1 ~ 5
+        允许设置的倍速范围为 0.1 ~ 8
       </n-tooltip>
 
       <n-grid :cols="2" y-gap="6">

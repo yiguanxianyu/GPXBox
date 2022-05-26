@@ -16,27 +16,6 @@ let gpxLineDecorator;
 let animP;
 let polyline;
 
-const addMap = () => {
-  map = L.map("map", {
-    center: [39.99, 116.303],
-    zoom: 15,
-    attributionControl: false
-  });
-};
-
-const addScale = map => {
-  L.control.scale({
-    maxWidth: 100,
-    metric: true,
-    imperial: false,
-  }).addTo(map);
-};
-
-const addTile = map => {
-  let tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-  L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
-};
-
 const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
 
 eventBus.$on('sendPolyline', inputPolyline => {
@@ -70,6 +49,27 @@ eventBus.$on('indexChanged', index => {
 eventBus.$on('sliderValueChanged', index => {
   animP.setLatLngs(polyline.slice(0, index))
 });
+
+const addMap = () => {
+  map = L.map("map", {
+    center: [39.99, 116.303],
+    zoom: 15,
+    attributionControl: false
+  });
+};
+
+const addScale = map => {
+  L.control.scale({
+    maxWidth: 100,
+    metric: true,
+    imperial: false,
+  }).addTo(map);
+};
+
+const addTile = map => {
+  let tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
+};
 
 onMounted(() => {
   addMap();
