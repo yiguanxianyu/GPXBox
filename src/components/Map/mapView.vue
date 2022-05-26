@@ -13,21 +13,8 @@ import {getCurrentInstance, onMounted} from "vue";
 let map;
 let gpxPolyline;
 let gpxLineDecorator;
-let speedRatio = 1;
-let index;
-let setTimeoutID = [];
 let animP;
-let dataLength;
-let inputPolyline;
-let timeDelta;
-
-const clearID = () => {
-  const idLength = setTimeoutID.length;
-  for (let i = 0; i < idLength; i++) {
-    clearTimeout(setTimeoutID[i]);
-  }
-  setTimeoutID = [];
-}
+let polyline;
 
 const addMap = () => {
   map = L.map("map", {
@@ -52,76 +39,36 @@ const addTile = map => {
 
 const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
 
-eventBus.$on('speedRatioChanged', sc => {
-  speedRatio = sc;
-})
-
-eventBus.$on('sendPolyline', input => {
-  index = 0;
-  dataLength = input.polyline.length;
-  timeDelta = input.timeDelta;
-
-  gpxPolyline.setLatLngs(input.polyline);
-  gpxLineDecorator.setPaths(input.polyline);
+eventBus.$on('sendPolyline', inputPolyline => {
+  gpxPolyline.setLatLngs(inputPolyline);
+  gpxLineDecorator.setPaths(gpxPolyline.getLatLngs());
   map.fitBounds(gpxPolyline.getBounds())
 
   // 实时轨迹线
   if (animP === undefined) {
     //第一次读入
-    animP = L.polyline([{lat: input.polyline[0][0], lon: input.polyline[0][1]}], {
+    animP = L.polyline([inputPolyline[0]], {
       weight: 4,
       color: '#ff6500'
     }).addTo(map);
   } else {
     //重新读入
-    animP.setLatLngs([{lat: input.polyline[0][0], lon: input.polyline[0][1]}])
+    animP.setLatLngs([inputPolyline[0]])
   }
-
-  const inputPl = new Array(dataLength);
-  for (let i = 0; i < dataLength; i++) {
-    let point = input.polyline[i];
-    inputPl[i] = {lat: point[0], lon: point[1]}
-  }
-  inputPolyline = inputPl;
-});
-
-eventBus.$on('play', () => {
-  clearID();
-  const set = () => {
-    if (index++ < dataLength) {
-      animP.addLatLng(inputPolyline[index]);
-      setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-    } else clearID();
-  }
-  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-});
-
-eventBus.$on('playReversed', () => {
-  clearID();
-  const set = () => {
-    if (index--) {
-      animP.setLatLngs(inputPolyline.slice(0, index));
-      setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-    } else clearID();
-  }
-  setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-
-});
-
-eventBus.$on('pause', () => {
-  clearID();
+  polyline = inputPolyline;
 });
 
 eventBus.$on('backToStart', () => {
-  index = 0;
   let startPoint = animP.getLatLngs()[0];
   animP.setLatLngs([startPoint]);
 })
 
-eventBus.$on('sliderValueChanged', value => {
-  clearID();
-  index = (value * dataLength).toFixed();
-  animP.setLatLngs(inputPolyline.slice(0, index))
+eventBus.$on('indexChanged', index => {
+  animP.setLatLngs(polyline.slice(0, index));
+});
+
+eventBus.$on('sliderValueChanged', index => {
+  animP.setLatLngs(polyline.slice(0, index))
 });
 
 onMounted(() => {

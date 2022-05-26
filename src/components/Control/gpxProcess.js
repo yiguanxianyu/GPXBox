@@ -113,7 +113,7 @@ GpxProcess.prototype.toPolyline = function () {
         let currPoint;
         for (let i = 0; i < dataLength; i++) {
             currPoint = points[i];
-            polyline[i] = [currPoint.lat, currPoint.lon];
+            polyline[i] = {lat: currPoint.lat, lon: currPoint.lon};
         }
         this._polyline = polyline;
     }

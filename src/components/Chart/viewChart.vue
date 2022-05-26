@@ -208,7 +208,7 @@ eventBus.$on("fileRead", file => {
     }
     timeDelta[dataLength - 1] = 0;
 
-    eventBus.$emit('sendPolyline', {polyline: gpx.toPolyline(), timeDelta: timeDelta});
+    eventBus.$emit('sendPolyline', gpx.toPolyline());
     eventBus.$emit('statsData', gpx.getStats());
   }
 });
@@ -221,9 +221,9 @@ eventBus.$on('play', () => {
   clearID();
   const set = () => {
     if (index++ < dataLength) {
-      setMarkLineData(index);
+      setMarkLineData(index);//更新图表数据
+      eventBus.$emit('indexChanged', index);//更新面板和地图数据
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-      eventBus.$emit('indexChanged', index);
     } else {
       clearID();
     }
@@ -235,9 +235,9 @@ eventBus.$on('playReversed', () => {
   clearID();
   const set = () => {
     if (index--) {
-      setMarkLineData(index);
+      setMarkLineData(index);//更新图表数据
+      eventBus.$emit('indexChanged', index);//更新面板和地图数据
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
-      eventBus.$emit('indexChanged', index);
     } else {
       clearID();
     }
@@ -249,7 +249,7 @@ eventBus.$on('pause', clearID);
 
 eventBus.$on('backToStart', () => {
   index = 0;
-  setMarkLineData(0)
+  setMarkLineData(0);
 });
 
 eventBus.$on('unitOfSpeedChanged', key => {
@@ -268,10 +268,9 @@ eventBus.$on('unitOfSpeedChanged', key => {
   setMarkLineData(index);
 });
 
-eventBus.$on('sliderValueChanged', value => {
+eventBus.$on('sliderValueChanged', i => {
   clearID();
-  index = (value * dataLength).toFixed();
-  setMarkLineData(index);
+  setMarkLineData(i);
 });
 
 </script>

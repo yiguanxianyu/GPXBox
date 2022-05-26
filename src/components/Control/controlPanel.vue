@@ -194,14 +194,22 @@ eventBus.$on('statsData', stats => {
   cumulDist = stats.cumulDist;
 });
 
+eventBus.$on("fileRead", () => {
+  fileNotRead.value = false;
+});
+
 eventBus.$on('indexChanged', index => {
   sliderValue.value = 10000 * index / numPoints.value;
   setMovedData(index);
 });
 
-eventBus.$on("fileRead", () => {
-  fileNotRead.value = false;
-});
+function sliderValueChanged(value) {
+  const tempIndex = (value * 0.0001 * numPoints.value).toFixed();
+  //更新已移动距离和时间的值
+  setMovedData(tempIndex);
+  //更新地图和图表
+  eventBus.$emit('sliderValueChanged', tempIndex);
+}
 
 function handleSpeedUnitChanged(key) {
   if (fileNotRead.value) {
@@ -244,14 +252,6 @@ function clickBackToStartButton() {
   eventBus.$emit('backToStart');
   setMovedData(0);
   sliderValue.value = 0;
-}
-
-function sliderValueChanged(value) {
-  const tempIndex = (value * 0.0001 * numPoints.value).toFixed();
-  //更新已移动距离和时间的值
-  setMovedData(tempIndex);
-  //更新地图和图表
-  eventBus.$emit('sliderValueChanged', value * 0.0001);
 }
 
 function beforeUpload({file}) {
