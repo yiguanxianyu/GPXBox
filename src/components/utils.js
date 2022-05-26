@@ -10,8 +10,9 @@ export function formatSecond(time) {
 }
 
 export function formatDistance(dist) {
-    if (dist >= 10000)
+    if (dist >= 10000) {
         return (dist * 0.001).toFixed(2) + 'km';
-    else
+    } else {
         return dist.toFixed(1) + 'm';
+    }
 }

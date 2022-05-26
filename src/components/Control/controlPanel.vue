@@ -9,16 +9,18 @@
       <div class="row">
         <div>
           <n-upload :max="1" accept=".gpx" @before-upload="beforeUpload">
-            <n-button color="#149D1F" secondary strong><n-icon :component="FolderOpen"/>&nbsp;打开 GPX</n-button>
+            <n-button color="#149D1F" secondary strong>
+              <n-icon :component="FolderOpen"/>&nbsp;打开 GPX
+            </n-button>
           </n-upload>
         </div>
 
-        <n-button :disabled="!fileHasRead" secondary strong @click="clickPlayButton">
+        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('play')">
           <n-icon :component="Play"/>
           &nbsp;播放
         </n-button>
 
-        <n-button :disabled="!fileHasRead" secondary strong @click="clickPauseButton">
+        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('pause')">
           <n-icon :component="Pause"/>
           &nbsp;暂停
         </n-button>
@@ -26,12 +28,12 @@
       </div>
 
       <div class="row">
-        <n-button :disabled="!fileHasRead" secondary strong @click="clickPlayReversedButton">
+        <n-button :disabled="fileNotRead" secondary strong @click="()=>_ctx.$emit('playReversed')">
           <n-icon :component="PlayBack"/>
           &nbsp;倒放
         </n-button>
 
-        <n-button :disabled="!fileHasRead" secondary strong @click="clickBackToStartButton">
+        <n-button :disabled="fileNotRead" secondary strong @click="clickBackToStartButton">
           <n-icon :component="ReturnUpBack"/>
           &nbsp;回到起点
         </n-button>
@@ -48,11 +50,11 @@
         <template #trigger>
           <n-input-number id="inputNumber" :default-value="1" :max="5" :min="0.1" :value="speedRatio"
                           @update:value="handleSpeedRatioChanged">
-            <template #suffix>
-              倍速
-            </template>
             <template #prefix>
               <n-icon :component="Speedometer" :depth="1"/>
+            </template>
+            <template #suffix>
+              倍速
             </template>
           </n-input-number>
         </template>
@@ -89,7 +91,7 @@
 
       </n-grid>
 
-      <n-slider id="slider" v-model:value="sliderValue" :disabled="!fileHasRead"
+      <n-slider id="slider" v-model:value="sliderValue" :disabled="fileNotRead"
                 :format-tooltip="v=>{return `${(v*0.01).toFixed(2)}%`}"
                 :max="10000" :step="1" placement="bottom" show-tooltip @update:value="sliderValueChanged"/>
     </div>
@@ -103,13 +105,14 @@ import {
   Analytics,
   BarChart,
   Checkmark,
+  FolderOpen,
   Pause,
   Play,
   PlayBack,
   ReturnUpBack,
   Speedometer,
   SpeedometerSharp,
-  StatsChart,FolderOpen,
+  StatsChart,
   Timer
 } from "@vicons/ionicons5";
 import {
@@ -139,8 +142,8 @@ const renderIcon = icon => {
 let _meanSpeed;
 let cumulDist;//累积距离
 let timeArr;//时间列表
-let startTime;
-let fileHasRead = ref(false);
+let startTime;//起始时间
+let fileNotRead = ref(true);
 const speedRatio = ref();//加速比率
 const sliderValue = ref(0);
 const movedTime = ref(0);
@@ -151,7 +154,8 @@ const meanSpeed = ref();
 const numPoints = ref();// 点的总数量
 const checkMark = renderIcon(Checkmark);
 const message = useMessage();
-const ctx = getCurrentInstance().appContext.config.globalProperties;
+const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
+const _ctx = ref(eventBus);
 
 //速度单位
 let unitOfSpeedIndex = 0;
@@ -171,7 +175,12 @@ const speedUnitOptions = ref([
   }
 ])
 
-ctx.$bus.$on('statsData', stats => {
+const setMovedData = index => {
+  movedDist.value = formatDistance(cumulDist[index]);
+  movedTime.value = formatSecond(timeArr[index] - startTime);
+}
+
+eventBus.$on('statsData', stats => {
   //展示统计数据
   totalDistance.value = formatDistance(stats.totalDistance);
 
@@ -186,71 +195,56 @@ ctx.$bus.$on('statsData', stats => {
   cumulDist = stats.cumulDist;
 });
 
-ctx.$bus.$on('indexChanged', index => {
+eventBus.$on('indexChanged', index => {
   sliderValue.value = 10000 * index / numPoints.value;
-  movedDist.value = formatDistance(cumulDist[index]);
-  movedTime.value = formatSecond(timeArr[index] - startTime);
+  setMovedData(index);
 });
 
-ctx.$bus.$on("fileRead", () => {
-  fileHasRead.value = true;
+eventBus.$on("fileRead", () => {
+  fileNotRead.value = false;
 });
 
 function handleSpeedUnitChanged(key) {
-  if (fileHasRead.value) {
-    ctx.$bus.$emit('unitOfSpeedChanged', key);
+  if (fileNotRead.value) {
+    message.warning('请先读取文件');
+  } else {
+    eventBus.$emit('unitOfSpeedChanged', key);
     meanSpeed.value = _meanSpeed[key];
 
     for (let i = 0; i < 3; i++) {
       speedUnitOptions.value[i].icon = null;
     }
     speedUnitOptions.value[key].icon = checkMark;
-  } else {
-    message.warning('请先读取文件');
   }
 }
 
 function handleSpeedRatioChanged(key) {
-  if (key !== null) {
+  if (key === null) {
     //当输入框为空的时候 key===null
-    ctx.$bus.$emit('speedRatioChanged', key);
-    message.success('调整为' + key + '倍速');
-    speedRatio.value = key;
-  } else {
     message.error('请输入正确的倍速');
+  } else {
+    eventBus.$emit('speedRatioChanged', key);
+    speedRatio.value = key;
+    message.success('调整为' + key + '倍速');
   }
 }
 
-function clickPlayButton() {
-  ctx.$bus.$emit('play');
-}
-
-function clickPauseButton() {
-  ctx.$bus.$emit('pause');
-}
-
 function clickBackToStartButton() {
-  ctx.$bus.$emit('backToStart');
-  movedDist.value = formatDistance(0);
-  movedTime.value = formatSecond(0);
+  eventBus.$emit('backToStart');
+  setMovedData(0);
   sliderValue.value = 0;
-}
-
-function clickPlayReversedButton() {
-  ctx.$bus.$emit('playReversed');
 }
 
 function sliderValueChanged(value) {
   const tempIndex = (value * 0.0001 * numPoints.value).toFixed();
   //更新已移动距离和时间的值
-  movedDist.value = formatDistance(cumulDist[tempIndex]);
-  movedTime.value = formatSecond(timeArr[tempIndex] - startTime);
+  setMovedData(tempIndex);
   //更新地图和图表
-  ctx.$bus.$emit('sliderValueChanged', value * 0.0001);
+  eventBus.$emit('sliderValueChanged', value * 0.0001);
 }
 
 function beforeUpload({file}) {
-  ctx.$bus.$emit("fileRead", file.file);
+  eventBus.$emit("fileRead", file.file);
   return false;
 }
 </script>

@@ -21,7 +21,7 @@ let dataLength;
 let inputPolyline;
 let timeDelta;
 
-function clearID() {
+const clearID = () => {
   const idLength = setTimeoutID.length;
   for (let i = 0; i < idLength; i++) {
     clearTimeout(setTimeoutID[i]);
@@ -37,7 +37,7 @@ const addMap = () => {
   });
 };
 
-const addScale = (map) => {
+const addScale = map => {
   L.control.scale({
     maxWidth: 100,
     metric: true,
@@ -45,18 +45,18 @@ const addScale = (map) => {
   }).addTo(map);
 };
 
-const addTile = (map) => {
+const addTile = map => {
   let tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   L.tileLayer(tileUrl, {minZoom: 7, maxZoom: 19}).addTo(map);
 };
 
-const ctx = getCurrentInstance().appContext.config.globalProperties;
+const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
 
-ctx.$bus.$on('speedRatioChanged', (sc) => {
+eventBus.$on('speedRatioChanged', sc => {
   speedRatio = sc;
 })
 
-ctx.$bus.$on('sendPolyline', (input) => {
+eventBus.$on('sendPolyline', input => {
   index = 0;
   dataLength = input.polyline.length;
   timeDelta = input.timeDelta;
@@ -77,7 +77,7 @@ ctx.$bus.$on('sendPolyline', (input) => {
     animP.setLatLngs([{lat: input.polyline[0][0], lon: input.polyline[0][1]}])
   }
 
-  let inputPl = new Array(dataLength);
+  const inputPl = new Array(dataLength);
   for (let i = 0; i < dataLength; i++) {
     let point = input.polyline[i];
     inputPl[i] = {lat: point[0], lon: point[1]}
@@ -85,9 +85,9 @@ ctx.$bus.$on('sendPolyline', (input) => {
   inputPolyline = inputPl;
 });
 
-ctx.$bus.$on('play', () => {
+eventBus.$on('play', () => {
   clearID();
-  let set = () => {
+  const set = () => {
     if (index++ < dataLength) {
       animP.addLatLng(inputPolyline[index]);
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
@@ -96,9 +96,9 @@ ctx.$bus.$on('play', () => {
   setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
 });
 
-ctx.$bus.$on('playReversed', () => {
+eventBus.$on('playReversed', () => {
   clearID();
-  let set = () => {
+  const set = () => {
     if (index--) {
       animP.setLatLngs(inputPolyline.slice(0, index));
       setTimeoutID.push(setTimeout(set, timeDelta[index] / speedRatio));
@@ -108,17 +108,17 @@ ctx.$bus.$on('playReversed', () => {
 
 });
 
-ctx.$bus.$on('pause', () => {
+eventBus.$on('pause', () => {
   clearID();
 });
 
-ctx.$bus.$on('backToStart', () => {
+eventBus.$on('backToStart', () => {
   index = 0;
   let startPoint = animP.getLatLngs()[0];
   animP.setLatLngs([startPoint]);
 })
 
-ctx.$bus.$on('sliderValueChanged', value => {
+eventBus.$on('sliderValueChanged', value => {
   clearID();
   index = (value * dataLength).toFixed();
   animP.setLatLngs(inputPolyline.slice(0, index))
