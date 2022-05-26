@@ -70,7 +70,7 @@ const speedFormatter = [
 ];
 
 const option = ref({
-  title: {text: 'GPXbox', left: 'center'},
+  title: {text: 'GPXbox', left: 'center', zlevel: 2},
   tooltip: {
     trigger: 'axis',
     formatter: speedFormatter[0].tooltip,
@@ -94,9 +94,14 @@ const option = ref({
     splitNumber: 2
   },
   toolbox: {
+    zlevel: 2,
     show: true,
+    left: '10%',
     feature: {
-      saveAsImage: {}
+      saveAsImage: {},
+      dataZoom: {
+        yAxisIndex: 'none'
+      }
     }
   },
   dataZoom: [
@@ -159,6 +164,7 @@ const option = ref({
     }
   ],
 });
+
 const chart = ref();
 const eventBus = getCurrentInstance().appContext.config.globalProperties.$bus;
 
@@ -270,6 +276,7 @@ eventBus.$on('unitOfSpeedChanged', key => {
 
 eventBus.$on('sliderValueChanged', i => {
   clearID();
+  index = i;
   setMarkLineData(i);
 });
 

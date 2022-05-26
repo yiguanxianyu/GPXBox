@@ -39,7 +39,7 @@
         </n-button>
 
         <n-dropdown :options="speedUnitOptions" trigger="hover" @select="handleSpeedUnitChanged">
-          <n-button secondary strong>
+          <n-button :disabled="fileNotRead" secondary strong>
             <n-icon :component="BarChart"/>
             &nbsp;速度单位
           </n-button>
@@ -48,8 +48,8 @@
 
       <n-tooltip trigger="hover">
         <template #trigger>
-          <n-input-number id="inputNumber" :default-value="1" :max="8" :min="0.1" :value="speedRatio"
-                          @update:value="handleSpeedRatioChanged">
+          <n-input-number id="inputNumber" :default-value="1" :disabled="fileNotRead" :max="8" :min="0.1"
+                          :value="speedRatio" @update:value="handleSpeedRatioChanged">
             <template #prefix>
               <n-icon :component="Speedometer" :depth="1"/>
             </template>
@@ -92,8 +92,9 @@
       </n-grid>
 
       <n-slider id="slider" v-model:value="sliderValue" :disabled="fileNotRead"
-                :format-tooltip="v=>{return `${(v*0.01).toFixed(2)}%`}"
-                :max="10000" :step="1" placement="bottom" show-tooltip @update:value="sliderValueChanged"/>
+                :format-tooltip="v=>{return (v * 0.01).toFixed(2)+'%';}"
+                :max="10000" :show-tooltip="!fileNotRead" :step="1" placement="bottom"
+                @update:value="sliderValueChanged"/>
     </div>
   </div>
 </template>
@@ -143,7 +144,9 @@ let _meanSpeed;
 let cumulDist;//累积距离
 let timeArr;//时间列表
 let startTime;//起始时间
-let fileNotRead = ref(true);
+let numerator;//临时变量，没啥用
+let denominator;//临时变量，没啥用
+const fileNotRead = ref(true);
 const speedRatio = ref();//加速比率
 const sliderValue = ref(0);
 const movedTime = ref(0);
@@ -185,6 +188,8 @@ eventBus.$on('statsData', stats => {
 
   totalTime.value = stats.totalTime;
   numPoints.value = stats.numPoints;
+  numerator = 0.0001 * (numPoints.value - 1);
+  denominator = 10000 / (numPoints.value - 1);
 
   _meanSpeed = stats.meanSpeed;
   meanSpeed.value = _meanSpeed[unitOfSpeedIndex];
@@ -194,40 +199,32 @@ eventBus.$on('statsData', stats => {
   cumulDist = stats.cumulDist;
 });
 
-eventBus.$on("fileRead", () => {
-  fileNotRead.value = false;
-});
-
 eventBus.$on('indexChanged', index => {
-  sliderValue.value = 10000 * index / numPoints.value;
+  sliderValue.value = index * denominator;
   setMovedData(index);
 });
 
 function sliderValueChanged(value) {
-  const tempIndex = (value * 0.0001 * numPoints.value).toFixed();
+  const index = (value * numerator).toFixed();
   //更新已移动距离和时间的值
-  setMovedData(tempIndex);
+  setMovedData(index);
   //更新地图和图表
-  eventBus.$emit('sliderValueChanged', tempIndex);
+  eventBus.$emit('sliderValueChanged', index);
 }
 
 function handleSpeedUnitChanged(key) {
-  if (fileNotRead.value) {
-    message.warning('请先读取文件');
-  } else {
-    eventBus.$emit('unitOfSpeedChanged', key);
-    meanSpeed.value = _meanSpeed[key];
+  eventBus.$emit('unitOfSpeedChanged', key);
+  meanSpeed.value = _meanSpeed[key];
 
-    for (let i = 0; i < 3; i++) {
-      speedUnitOptions.value[i].icon = null;
-    }
-    speedUnitOptions.value[key].icon = checkMark;
+  for (let i = 0; i < 3; i++) {
+    speedUnitOptions.value[i].icon = null;
   }
+  speedUnitOptions.value[key].icon = checkMark;
 }
 
 function handleSpeedRatioChanged(key) {
   if (key === null) {
-    //当输入框为空的时候 key===null
+    //当输入框为空的时候 key === null
     message.error('请输入正确的倍速');
   } else {
     eventBus.$emit('speedRatioChanged', key);
@@ -256,6 +253,8 @@ function clickBackToStartButton() {
 
 function beforeUpload({file}) {
   eventBus.$emit("fileRead", file.file);
+  fileNotRead.value = false;
+
   return false;
 }
 </script>
