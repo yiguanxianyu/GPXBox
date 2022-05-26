@@ -1,5 +1,5 @@
 <template>
-  <v-chart ref="chart" :autoresize="true" :option="option"/>
+  <v-chart ref="chart" :autoresize="true" :option="option" @click="handleClick"/>
 </template>
 
 <script setup>
@@ -21,7 +21,6 @@ import {UniversalTransition} from 'echarts/features';
 import {CanvasRenderer} from 'echarts/renderers';
 import GpxProcess from "@/components/Control/gpxProcess";
 
-
 use([
   GridComponent,
   MarkPointComponent,
@@ -42,30 +41,33 @@ let chartData;//图表数据
 let timeDelta;//时间间隔序列
 let dataLength;//点的数量
 
-const speedFormatter = [{
-  markLineY: '{c} m/s', tooltip: (params) => {
-    return `${params[0].data.value[1].toFixed(2)}m/s`;
+const speedFormatter = [
+  {
+    markLineY: '{c} m/s',
+    tooltip: (params) => {
+      return `${params[0].data.value[1].toFixed(2)}m/s`;
+    }
+  }, {
+    markLineY: '{c} km/h',
+    tooltip: params => {
+      return `${params[0].data.value[1].toFixed(2)}km/h`;
+    }
+  }, {
+    markLineY: params => {
+      let min = Math.trunc(params.data.value);
+      let sec = Math.trunc((params.data.value - min) * 60);
+      if (sec < 10) sec = '0' + sec;
+      return min + ':' + sec;
+    },
+    tooltip: params => {
+      let value = params[0].data.value[1];
+      let min = Math.trunc(value);
+      let sec = Math.trunc((value - min) * 60);
+      if (sec < 10) sec = '0' + sec;
+      return min + ':' + sec + '/km';
+    }
   }
-}, {
-  markLineY: '{c} km/h',
-  tooltip: params => {
-    return `${params[0].data.value[1].toFixed(2)}km/h`;
-  }
-}, {
-  markLineY: params => {
-    let min = Math.trunc(params.data.value);
-    let sec = Math.trunc((params.data.value - min) * 60);
-    if (sec < 10) sec = '0' + sec;
-    return min + ':' + sec;
-  },
-  tooltip: params => {
-    let value = params[0].data.value[1];
-    let min = Math.trunc(value);
-    let sec = Math.trunc((value - min) * 60);
-    if (sec < 10) sec = '0' + sec;
-    return min + ':' + sec + '/km';
-  }
-}];
+];
 
 const option = ref({
   title: {text: 'GPXbox', left: 'center'},
@@ -174,6 +176,14 @@ const setMarkLineData = i => {
   option.value.series[0].markLine.data[0].xAxis = chartData[i].value[0];
   option.value.series[0].markLine.data[1].yAxis = chartData[i].value[1];
   option.value.series[0].markPoint.data[0] = {coord: chartData[i].value};
+}
+
+const handleClick = params => {
+  clearID();
+  const i = params.dataIndex;
+  eventBus.$emit('indexChanged', i);
+  setMarkLineData(i);
+  index = i;
 }
 
 eventBus.$on("fileRead", file => {
