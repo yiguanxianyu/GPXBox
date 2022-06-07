@@ -4,7 +4,7 @@ GPXbox is a pure front-end web GPX tool aims at visualization in both static and
 
 GPXBox has no relationship with Xbox.
 
-## Reference
+## Credits
 
 - `vue.js` under `MIT license`
 - `mitt` under `MIT license`
