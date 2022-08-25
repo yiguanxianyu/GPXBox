@@ -1,7 +1,7 @@
 const {defineConfig} = require('@vue/cli-service')
 
 module.exports = defineConfig({
-    publicPath: '/GPXbox-demo/',
+    publicPath: '/',
     transpileDependencies: true,
     chainWebpack: config => {
         config.plugin('html').tap(args => {
